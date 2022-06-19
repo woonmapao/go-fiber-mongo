@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/woonmapao/go-fiber-mongo/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -21,13 +22,6 @@ var mg MongoInstance
 
 const dbName = "hrms"
 const mongoURI = "mongodb://localhost:27017/" + dbName
-
-type Employee struct {
-	ID     string  `json:"id,omitempty" bson:"_id,omitempty"`
-	Name   string  `json:"name"`
-	Salary float64 `json:"salary"`
-	Age    float64 `json:"age"`
-}
 
 func Connect() error {
 	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
@@ -66,7 +60,7 @@ func main() {
 			return c.Status(500).SendString(err.Error())
 		}
 
-		var employees []Employee = make([]Employee, 0)
+		var employees []models.Employee = make([]models.Employee, 0)
 
 		if err := cursor.All(c.Context(), &employees); err != nil {
 			return c.Status(500).SendString(err.Error())
@@ -78,7 +72,7 @@ func main() {
 	app.Post("/employee", func(c *fiber.Ctx) error {
 		collection := mg.Db.Collection("employees")
 
-		employee := new(Employee)
+		employee := new(models.Employee)
 
 		if err := c.BodyParser(employee); err != nil {
 			return c.Status(400).SendString(err.Error())
@@ -94,7 +88,7 @@ func main() {
 		filter := bson.D{{Key: "_id", Value: insertionResult.InsertedID}}
 		createdRecord := collection.FindOne(c.Context(), filter)
 
-		createdEmployee := &Employee{}
+		createdEmployee := &models.Employee{}
 		createdRecord.Decode(createdEmployee)
 
 		return c.Status(201).JSON(createdEmployee)
@@ -109,7 +103,7 @@ func main() {
 			return c.SendStatus(400)
 		}
 
-		employee := new(Employee)
+		employee := new(models.Employee)
 
 		if err := c.BodyParser(employee); err != nil {
 			return c.Status(400).SendString(err.Error())
